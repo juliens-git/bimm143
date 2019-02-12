@@ -2,6 +2,7 @@
 #' title: "class05"
 #' author: "julien"
 #' date: "20190124"
+#' output: github_document
 #' ---
 
 
