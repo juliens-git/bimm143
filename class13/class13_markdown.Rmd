@@ -63,3 +63,28 @@ ori.noh <- trim.pdb(ori, "noh")
 rmsd(ori.noh,res.noh)
 ```
 
+EXTRA: Normal Mode Analysis (NMA)
+
+Loading hen egg white lysosome structure and plotting
+```{r}
+##library(bio3d)
+pdb <- read.pdb("1HEL")
+modes <- nma(pdb)
+plot(modes, sse=pdb)
+```
+
+Preparing file to show structural variations in VMD
+```{r}
+# Visualize NMA results
+mktrj(modes, mode=7, file="nma_7.pdb")
+```
+
+Question 7: Want to look at most flexible portions of HIV-1 protease
+```{r}
+##already read pdb of 1hsg and saved as variable "hiv"
+hiv.modes <- nma(hiv)
+##don't need next line as it is just the plot
+##plot(hiv.modes, sse=hiv)
+mktrj(hiv.modes, mode=7, file="hiv_7.pdb")
+```
+Loading in a playing the hiv_7.pdb file in VMD shows that the prtotein is very flexible in the region of the ligand This may play a role in docking calculations as the large flexibility makes it such that many more arragnements off amino acids would need to be considered when looking for the right alignment to dock.
