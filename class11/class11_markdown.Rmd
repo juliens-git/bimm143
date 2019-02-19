@@ -1,0 +1,73 @@
+---
+title: "class11_markdown"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+## Section 1. The PDB
+```{r}
+stats <- read.csv(file = "data/Data Export Summary.csv")
+```
+
+Q1:  Determine the percentage of structures solved by X-Ray and Electron Microscopy. From
+the website what proportion of structures are protein?
+
+ 
+```{r}
+percent.by.method <- stats$Total/sum(stats$Total) *100
+names(percent.by.method) <- rownames(stats)
+```
+
+```{r}
+sum(stats$Proteins)/sum(stats$Total) *100
+```
+
+Q2: There are 1138 structures of HIV-1 protease in the current PDB
+
+Q3: Only see one molecule becasuse the program groups the molecules together as one
+
+
+## Section 3: Introduction to Bio3D in R
+
+Load package
+```{r}
+library(bio3d)
+```
+Now can use functions in package
+
+```{r}
+pdb <- read.pdb("data/1hsg.pdb")
+pdb
+```
+
+```{r}
+pdb$atom
+```
+
+Q8 trying to select out only protein and drug only parts of files/molecules
+
+```{r}
+pdb <- read.pdb("1hsg")
+prot.inds <- atom.select(pdb, "protein")
+prot.inds
+```
+```{r}
+pdb$atom[prot.inds$atom,]
+```
+```{r}
+prot.pdb <- trim.pdb(pdb, prot.inds)
+write.pdb(prot.pdb, file="protein.pdb")
+```
+
+Same thing for drug now
+```{r}
+lig.inds <- atom.select(pdb, "ligand")
+lig.pdb <- trim.pdb(pdb, lig.inds)
+write.pdb(lig.pdb, file = "ligand.pdb")
+```
+
