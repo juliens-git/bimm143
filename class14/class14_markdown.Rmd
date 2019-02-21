@@ -1,0 +1,63 @@
+---
+title: "class14_markdown"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Asthma SNPs in MXL Population
+
+Read file from Ensemble
+
+http://uswest.ensembl.org/Homo_sapiens/Variation/Sample?db=core;r=17:39894595-39895595;v=rs8067378;vdb=variation;vf=362656008#373531_tablePanel
+```{r}
+mxl.data <- read.csv("373531-SampleGenotypes-Homo_sapiens_Variation_Sample_rs8067378.csv")
+```
+Use table function to count how many of each genotypes
+```{r}
+mxl.genotypes <- table(mxl.data$Genotype..forward.strand.)
+## if want to count specific one can also do following
+## sum(mxl.data$Genotype..forward.strand.=="G|G")
+```
+Percent values
+```{r}
+mxl.genotypes / nrow(mxl.data) *100
+```
+
+FASTQ quality scores
+
+Q. Does the first sequence have good quality
+```{r}
+q <- "DDDDCDEDCDDDDBBDDDCC@"
+library(seqinr)
+library(gtools)
+
+asc(s2c(q)) -33
+## 33 is the offset for the specific ASCII range in sequencing
+```
+
+Importing file for Population Scale Analysis
+```{r}
+expression.data <- read.csv("rs8067378_ENSG00000172057.6.txt", sep = " ")
+```
+
+```{r}
+summary(expression.data)
+```
+
+```{r}
+inds.gg <-expression.data$geno =="G/G"
+summary(expression.data$exp[inds.gg])
+inds.aa <-expression.data$geno =="A/A"
+summary(expression.data$exp[inds.aa])
+inds.ag <-expression.data$geno =="A/G"
+summary(expression.data$exp[inds.ag])
+```
+Figure that would show distributon
+```{r}
+boxplot(exp ~ geno, expression.data)
+```
+
+
