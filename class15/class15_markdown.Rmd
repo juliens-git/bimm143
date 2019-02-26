@@ -1,0 +1,220 @@
+---
+title: "class15_markdown"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## GitHub Documents
+
+Install DESeq2 from bioconductor
+Say no when asks if want to install from source or update
+```{r}
+## Copy paste into console one at a time
+##source("http://bioconductor.org/biocLite.R")
+##biocLite()
+
+# For this class, you'll also need DESeq2:
+##biocLite("DESeq2")
+```
+Run from library
+```{r}
+library(BiocInstaller)
+```
+
+Read the csv files count and metadata files
+```{r}
+counts <- read.csv("data/airway_scaledcounts.csv", stringsAsFactors = FALSE)
+metadata <-  read.csv("data/airway_metadata.csv", stringsAsFactors = FALSE)
+```
+
+understand the data by looking at the heads
+```{r}
+# head(counts)
+# head(metadata)
+# dim(counts)
+# dim(metadata)
+```
+matches except that have ensemble gene name in first column
+
+want to check if columns match rows
+```{r}
+colnames(counts)
+metadata$id
+colnames(counts)[-1] == metadata$id
+#use all to check all cases and return single function
+all(colnames(counts)[-1] == metadata$id)
+```
+
+First task is find which columns in counts correstponds to control conditions (i.e. no drug).
+Then calculate average count value for each gene.
+```{r}
+control.inds <- metadata$dex == "control"
+# use ID to look up columns and use rownames to match
+control.ids <- metadata$id[control.inds]
+head(counts[,control.ids])
+```
+
+Calculate average of each row
+```{r}
+control.mean <- rowSums(counts[,control.ids]) / ncol(counts[,control.ids])
+names(control.mean) <- counts$ensgene
+```
+
+Now do same for drug treated columns
+```{r}
+treated.inds <- metadata$dex == "treated"
+treated.ids  <- metadata$id[treated.inds]
+treated.mean <- rowSums(counts[,treated.ids]) / ncol(counts[,treated.ids])
+names(treated.mean) <- counts$ensgene
+
+```
+
+Combine meancount to make it cleaner
+```{r}
+meancounts <- data.frame(control.mean, treated.mean)
+```
+
+Sum instances
+```{r}
+colSums(meancounts)
+```
+
+Plot treated vs control. If no RMSE then perfect correlation, if scatter then other factors may be related
+```{r}
+plot(meancounts$control.mean, meancounts$treated.mean)
+```
+
+Because a bunch of values very small, better to show as a logarithm plot
+```{r}
+plot(log(meancounts$control.mean), log(meancounts$treated.mean))
+# or can do
+# plot(meancounts$control.mean, meancounts$treated.mean, log = "xy")
+```
+
+Log2 is usually used because it has nice properties
+Creates another column in meancounts that has log comparitive properties
+0 is on line, + is above, - is below (above means gene expression goes up)
+```{r}
+meancounts$log2fc <- log2(meancounts[,"treated.mean"]/meancounts[,"control.mean"])
+head(meancounts)
+```
+
+Nan = log(x/0)
+-inf = log(0)
+want to filter out these odd values, if zeroes then no data on gene
+arr.ind retuns array row and column of instance
+unique filters out duplicates 
+```{r}
+zero.vals <- which(meancounts[,1:2]==0, arr.ind=TRUE)
+to.remove <- unique(zero.vals[,1])
+mycounts <- meancounts[-to.remove,]
+```
+
+Create common threshold to determine whether data "different." Using -2 and 2
+```{r}
+up.ind <- mycounts$log2fc > 2
+down.ind <- mycounts$log2fc < (-2)
+```
+
+Use sum to get amount of up and down
+```{r}
+sum(up.ind)
+sum(down.ind)
+```
+
+There are `sum(up.ind)` up regulated genes and `sum(down.ind)` down regualated genes.
+
+Show up regulated genes
+```{r}
+head(mycounts[up.ind,])
+```
+Problem is do not what know proteins are being mentioned
+
+Use merge function to combine annotation data with regulated data
+use head to get idea of annotation.data
+```{r}
+annotation.data <- read.csv("data/annotables_grch38.csv")
+# head(annotation.data)
+mycounts.annotated <- merge(mycounts, annotation.data, by.x = "row.names", by.y = "ensgene")
+# head(mycounts.annotated)
+```
+
+Save time and work efficiently by using the DESeq2 analysis
+```{r}
+library(DESeq2)
+citation("DESeq2")
+```
+
+Need to populate w count data, metadata, and formula for experiment design
+```{r}
+dds <- DESeqDataSetFromMatrix(countData=counts, 
+                              colData=metadata, 
+                              design=~dex, 
+                              tidy=TRUE)
+dds
+```
+
+Want to run function
+will but but then need to get results and data
+```{r}
+dds.return <- DESeq(dds)
+dds.results <- results(dds.return)
+summary(dds.results)
+```
+
+Volcano plot: significantly regulated gense vs. fold change
+shows fold change (x-axis) vs. p-value
+
+Order results by smallest p-value
+```{r}
+resOrdered <- dds.results[order(dds.results$pvalue),]
+```
+
+Change p-value cutoff to 0.05 instead of default 0.1
+```{r}
+res05 <- results(dds.return, alpha=0.05)
+res01 <- results(dds.return, alpha=0.01)
+summary(res05)
+```
+
+More generic way of accessing acutal subset of data framce
+```{r}
+resSig05 <- subset(as.data.frame(dds.results), padj < 0.05)
+nrow(resSig05)
+resSig01 <- subset(as.data.frame(dds.results), padj < 0.01)
+nrow(resSig01)
+```
+
+Arrange and view results by adjusted p-value
+```{r}
+ord <- order( resSig01$padj )
+#View(res01[ord,])
+head(resSig01[ord,])
+```
+
+Write out ordered significant results with annotations as csv
+```{r}
+write.csv(resSig05[ord,], "data/signif05_results.csv")
+write.csv(resSig01[ord,], "data/signif01_results.csv")
+```
+
+**Data Visualization**
+Plotting
+```{r}
+mycols <- rep("gray", nrow(res01))
+mycols[ abs(res01$log2FoldChange) > 2] <- "red"
+inds <- (res01$Spadj < 0.01) & (abs(res01$log2FoldChange) > 2)
+mycols[inds] <- "blue"
+
+# Volcano Plot
+plot(res01$log2FoldChange, -log(res01$padj), col=mycols, ylab= "-Log(P-value)", xlab= "Log2(FoldChange")
+
+# INC
+
+
+```
+
+
