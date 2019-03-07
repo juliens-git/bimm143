@@ -1,0 +1,113 @@
+---
+title: "class19_markdown"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Install Packages (will not run)
+```{r eval=FALSE, include=TRUE}
+source("https://bioconductor.org/biocLite.R")
+biocLite(c("GenomicDataCommons", "TCGAbiolinks", "maftools"))
+```
+
+Once installed call packages
+```{r eval=FALSE}
+library(GenomicDataCommons)
+library(TCGAbiolinks)
+library(maftools)
+```
+
+Check GDC Status
+```{r eval=FALSE}
+GenomicDataCommons::status()
+```
+
+COULD NOT CONTINUE BECAUSE DONT HAVE R 3.3.5, see lecture Rmd for answers
+
+Hands on 2: Designing a personalized cancer vaccine
+
+Load bio3d package
+```{r}
+library(bio3d)
+```
+
+Load fasta file
+```{r}
+seqs <- read.fasta("lecture18_sequences.fa")
+```
+
+Function to re-align but dont need because already aligned
+```{r}
+#seqs <- seqaln(seqs)
+```
+
+Try to see which pieces are not aligned --> mutant sites
+```{r}
+## Calculate positional identity scores
+ide <- conserv(seqs$ali, method="identity")
+mutant.sites <- which(ide < 1) 
+
+## Exclude gap possitions from analysis
+gaps <- gap.inspect(seqs)
+mutant.sites <- mutant.sites[mutant.sites %in% gaps$f.inds]
+
+mutant.sites
+```
+
+Make names for mutants 
+```{r}
+## Make a "names" label for our output sequences (one per mutant)
+mutant.names <- paste0(seqs$ali["P53_wt",mutant.sites],
+                       mutant.sites,
+                       seqs$ali["P53_mutant",mutant.sites])
+
+mutant.names
+```
+
+Extract all 9-mer mutant encompassing sequences for each mutant site
+```{r}
+## Sequence positions surounding each mutant site
+start.position <- mutant.sites - 8
+end.position <-  mutant.sites + 8
+
+# Blank matrix to store sub-sequences
+store.seqs <- matrix("-", nrow=length(mutant.sites), ncol=17)
+rownames(store.seqs) <- mutant.names
+
+## Extract each sub-sequence
+for(i in 1:length(mutant.sites)) {
+  store.seqs[i,] <- seqs$ali["P53_mutant",start.position[i]:end.position[i]]
+}
+
+store.seqs
+```
+
+Output to FASTA file for further convenience
+```{r}
+## Output a FASTA file for further analysis
+write.fasta(seqs=store.seqs, ids=mutant.names, file="subsequences.fa")
+```
+
+Looking at oncogene
+```{r}
+# library(bio3d)
+
+## Read KRas oncogene sequence from UniProt
+wt <- get.seq("P01116")
+
+## Here we make four mutants namely: G12V, Q22N, T74S and A130V
+mutant <- wt
+mutant$ali[ c(12,22,74,130)] <- c("V", "N", "S", "V")
+
+write.fasta( seqbind(wt, mutant), ids=c("wt","mutant"), file="kras-sequences.fa")
+
+```
+
+Stats on computer (session info)
+```{r}
+sessionInfo()
+```
+
