@@ -1,0 +1,219 @@
+---
+title: "class08_markdown"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Creating some example data to work with
+```{r}
+tmp <- c(rnorm(30,-3), rnorm(30,3))
+x <- cbind(x=tmp, y=rev(tmp))
+
+plot(x)
+```
+
+Use the kmeans() function setting k to 2 and nstart=20
+Inspect/print the results
+Q. How many points are in each cluster?
+Q. What ‘component’ of your result object details
+ - cluster size?
+ - cluster assignment/membership?
+ - cluster center?
+Plot x colored by the kmeans cluster assignment and
+ add cluster centers as blue points
+
+```{r}
+km<-kmeans(x, centers=2, nstart = 20)
+```
+
+picking up specific values from kmeans
+
+```{r}
+km$size
+km$cluster
+```
+
+Cluster vector can be used to assign which color goes to which data, set when plotting
+second line plots centers of kmeans
+
+```{r}
+plot(x, col=km$cluster)
+points(km$centers, col="blue", pch=15, cex=2)
+```
+
+Hierarchical Clustering 
+
+First we need to calculate point (dis)similarity
+as the Euclidean distance between observations
+makes a 60x60 grid on how far each point is from another
+```{r}
+dist_matrix <- dist(x)
+## view()
+```
+
+The hclust() function returns a hierarchical
+clustering model
+```{r}
+hc <- hclust(d = dist_matrix)
+hc
+#plotting hc will show you how the numbers are related
+#tree shape shows hierarchical models, higher distance --> values further apart
+plot(hc)
+```
+
+Can use cutree(hc, h=6) will cut tree at height 6
+```{r}
+plot(hc)
+abline(h=6, col="red")
+cutree(hc, h=6)
+# if use k= instead of h, will cut to have that many groups
+```
+
+Other Hierarchical CLustering
+```{r}
+# use dist_matrix
+
+hc.complete <- hclust(dist_matrix, method = "average")
+hc.complete <- hclust(dist_matrix, method = "single")
+hc.complete <- hclust(dist_matrix, method = "complete")
+
+plot(hc.complete)
+```
+
+
+Run hclust on groups to see overlapping
+```{r}
+# Step 1. Generate some example data for clustering
+x <- rbind(
+ matrix(rnorm(100, mean=0, sd = 0.3), ncol = 2), # c1
+ matrix(rnorm(100, mean = 1, sd = 0.3), ncol = 2), # c2
+ matrix(c(rnorm(50, mean = 1, sd = 0.3), # c3
+ rnorm(50, mean = 0, sd = 0.3)), ncol = 2))
+colnames(x) <- c("x", "y")
+# Step 2. Plot the data without clustering
+plot(x)
+# Step 3. Generate colors for known clusters
+# (just so we can compare to hclust results)
+col <- as.factor( rep(c("c1","c2","c3"), each=50) )
+plot(x, col=col)
+# clustering code
+example_dist <- dist(x)
+example_clust <- hclust(example_dist)
+example_clust2 <- cutree(example_clust, k=2)
+plot(x, col=example_clust2)
+example_clust3 <- cutree(example_clust, k=3)
+plot(x, col=example_clust3)
+```
+
+PCA (Pricipal Component Analysis) Time
+```{r}
+## You can also download this file from the class website!
+mydata <- read.csv("https://tinyurl.com/expression-CSV",
+ row.names=1)
+head(mydata)
+## use t() fucntion can transpose (invert axis)
+##    head(t(mydata))
+```
+
+Do a PCA analysis
+```{r}
+pca <- prcomp(t(mydata), scale=TRUE)
+## plot PCA1 vs PCA2
+plot(pca$x[,1], pca$x[,2]) 
+## variance is squared of stdev
+pca.var <- pca$sdev^2
+pca.var.per <- round(pca.var/sum(pca.var)*100, 1)
+pca.var.per
+
+## shows how much variance due to different levels of PC (PC1 vs PC2 vs PC3 etc)
+barplot(pca.var.per, main="Screen Plot",
+ xlab="Principal Component", ylab="Percent Variation")
+## results show PC1 is where most of variance located
+```
+
+```{r}
+## A vector of colors for wt and ko samples
+colvec <- colnames(mydata)
+colvec[grep("wt", colvec)] <- "red"
+colvec[grep("ko", colvec)] <- "blue"
+plot(pca$x[,1], pca$x[,2], col=colvec, pch=16,
+ xlab=paste0("PC1 (", pca.var.per[1], "%)"),
+ ylab=paste0("PC2 (", pca.var.per[2], "%)")) 
+##click to identify function (interactive, use ESC to exit)
+identify(pca$x[,1], pca$x[,2], labels=colnames(mydata))
+```
+
+PCA Hands On
+
+```{r}
+##read data
+x <- read.csv("data/UK_foods.csv")
+## use dim() or ncol() or nrow()
+## View(x) beause cannot use when marking down
+dim(x)
+```
+
+need to take first row away from index because does not belong
+```{r}
+rownames(x) <- x[,1]
+x <- x[,-1]
+head(x)
+```
+
+Instead of doing this, can rather run single function upon reading file
+```{r}
+x <- read.csv("data/UK_foods.csv", row.names=1)
+```
+
+See if can find info on data based on barplots and other plots
+```{r}
+barplot(as.matrix(x), beside=T, col=rainbow(nrow(x)))
+barplot(as.matrix(x), beside=F, col=rainbow(nrow(x)))
+pairs(x, col=rainbow(10), pch=16)
+```
+
+Hard to get info from data, instead use PCA
+```{r}
+## need to transpose because prcomp expects oberservations = rows and variables = columns
+pca <- prcomp( t(x) )
+summary(pca)
+```
+
+Trying to plto PC1 vs PC2
+```{r}
+plot(pca$x[,1], pca$x[,2], xlab="PC1", ylab="PC2", xlim=c(-270,500))
+## second line just replacs the points with text
+text(pca$x[,1], pca$x[,2], colnames(x), col=c("Orange", "Red", "Blue", "DarkGreen"))
+```
+
+
+Start to get stdev to understand how much variation in original data each PC accounts for
+```{r}
+v <- round( pca$sdev^2/sum(pca$sdev^2) * 100 )
+v
+## or second row
+z <- summary(pca)
+z$importance
+## plotting PC variations
+barplot(v, xlab="Principal Component", ylab="Percent Variation")
+```
+
+Instead look for variable variations
+```{r}
+## Lets focus on PC1 as it accounts for > 90% of variance 
+par(mar=c(10, 3, 0.35, 0))
+barplot( pca$rotation[,1], las=2 )
+
+##same process on PC2
+barplot( pca$rotation[,2], las=2 )
+```
+
+
+
+
+

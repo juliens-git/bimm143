@@ -2,7 +2,6 @@
 #' title: "class05"
 #' author: "julien"
 #' date: "20190124"
-#' output: github_document
 #' ---
 
 
@@ -13,7 +12,7 @@
 #?rnorm or help(rnorm) to learn about normal distribution
 x <- rnorm(1000,0)
 boxplot(x)
-#'I have generated **bold** x **italics** and it has **r code(x)**
+#'I have generated **bold** x **italics** and it has `r code(x)`
 
 # summary(x)
 # hist(x)

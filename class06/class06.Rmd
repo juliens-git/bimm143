@@ -1,0 +1,106 @@
+---
+title: "Class_06"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+###Section 1: This time we're doing it again
+
+In this secion we are goingo ttry to use **read.table()** function and friends to read some example text flat files.
+
+```{r}
+plot(1:10)
+```
+
+Then to file reading **(this one is formatted in CSV)**.
+```{r}
+data1 <- read.csv("test1.txt")
+data1
+```
+
+```{r}
+data2 <- read.table("test2.txt", sep = "$", header = TRUE)
+data2
+```
+
+```{r}
+data3<- read.table("test3.txt", header = FALSE)
+data3
+?read.table
+```
+
+## Section 2: functions
+created add function
+```{r}
+add <- function(x,y=1) {
+  # Sum the input x and y
+  x + y
+}
+```
+
+```{r}
+add(1)
+add(1,100)
+add(c(1,2,3))
+add(c(1,2,3),4)
+```
+Create optimized function
+```{r}
+rescale <- function(x) {
+  rng <- range(x)
+  (x - rng[1]) / (rng[2] - rng[1])
+}
+```
+Test on small example where know answer
+```{r}
+rescale(0:10)
+```
+need to omit NA
+```{r}
+rescale <- function(x) {
+  rng <- range(x, na.rm = TRUE)
+  (x - rng[1]) / (rng[2] - rng[1])
+}
+rescale(c(1,2,NA,3,19))
+```
+create function where can run different arguments
+```{r}
+mrescale <- function(x, na.rm = TRUE, plot = FALSE) {
+  rng <- range(x, na.rm = na.rm)
+  print("Hello")
+  answer <- (x-rng[1]) / (rng[2]-rng[1])
+  
+  if(plot) {
+    plot(answer, typ = "o", lwd=4)
+  }
+  
+  return(answer)
+}
+mrescale(c(1:6, NA, 10),,TRUE)
+```
+installed bio3d package via <install.packages("bio3d")> in console
+
+

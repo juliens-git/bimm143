@@ -1,0 +1,43 @@
+---
+title: "class07_markdown"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Functions Revisited
+Option-Command-I can input R code brakcets
+```{r}
+source("http://tinyurl.com/rescale-R")
+```
+Working with rescale function
+```{r}
+rescale( c(1,5,10))
+```
+
+Let's try rescale2() with the stop() function catch for a **non-numeric** input
+
+Creating function to find NA
+```{r}
+x<-c(4,7,NA,4,7,NA)
+which( is.na(x))
+```
+
+```{r}
+both_na3 <- function(x, y) {
+ if(length(x) != length(y)) {
+ stop("Input x and y should be vectors of the same length")
+ }
+
+ na.in.both <- ( is.na(x) & is.na(y) )
+ na.number <- sum(na.in.both)
+ na.which <- which(na.in.both)
+ message("Found ", na.number, " NA's at position(s):",
+ paste(na.which, collapse=", ") )
+
+ return( list(number=na.number, which=na.which) )
+}
+```
+
